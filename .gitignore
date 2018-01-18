@@ -1,0 +1,57 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+# *.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+# *.lib
+
+# Executables
+*.exe
+*.out
+*.app
+*.vs
+*.obj
+*.opendb
+*.db
+*.VC.db
+*.sdf
+*.opensdf
+*.exp
+*.ilk
+x64
+ipch
+*.suo
+*.pdb
+*.tlog
+*.rule
+*.lastbuildstate
+
+# backup file
+*.bak
+
+# directory, boost file include these names
+# when first commit, comment below 2 lines
+# and after commit, uncomment below 2 lines
+# win32
+# Debug

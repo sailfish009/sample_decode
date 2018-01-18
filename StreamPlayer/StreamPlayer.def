@@ -1,0 +1,6 @@
+LIBRARY	"StreamPlayer"
+
+EXPORTS Initialize
+        StartPlay
+        Stop
+        Uninitialize
