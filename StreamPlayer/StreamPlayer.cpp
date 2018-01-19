@@ -179,20 +179,11 @@ void StreamPlayer::Stop()
   if (cThread_.joinable())
       cThread_.join();
 
-  //p_device->stop();
 }
 
 void StreamPlayer::Uninitialize()
 {
   Stop();
-
-  /////////////////////////////////////////////////////////////
-#if 0
-  Sleep(1000);
-  if (p_device != nullptr)
-    delete p_device;
-#endif
-  /////////////////////////////////////////////////////////////
 
   if (playerParams_.window != nullptr && originalWndProc_ != nullptr)
   {

@@ -91,14 +91,28 @@ void Stream::Open(string const& streamUrl)
     throw runtime_error("no video stream");
   }
 
+#if 0
   codecCtxPtr_ = formatCtxPtr_->streams[videoStreamIndex_]->codec;
+#endif
+  
+  //
+  codecparPtr_ = formatCtxPtr_->streams[videoStreamIndex_]->codecpar;
 
-  AVCodec *codecPtr = avcodec_find_decoder(codecCtxPtr_->codec_id);
+  //AVCodec *codecPtr = avcodec_find_decoder(codecCtxPtr_->codec_id);
+  AVCodec *codecPtr = avcodec_find_decoder(AV_CODEC_ID_H264);
   if (codecPtr == nullptr)
   {
     avformat_close_input(&formatCtxPtr_);
     throw runtime_error("avcodec_find_decoder() failed");
   }
+
+  codecCtxPtr_ = avcodec_alloc_context3(codecPtr);
+  if (codecCtxPtr_ == nullptr)
+  {
+    avformat_close_input(&formatCtxPtr_);
+    throw runtime_error("avcodec_alloc_context3() failed");
+  }
+
 
   error = avcodec_open2(codecCtxPtr_, codecPtr, nullptr);
   if (error < 0)
@@ -108,8 +122,7 @@ void Stream::Open(string const& streamUrl)
     throw runtime_error("avcodec_open2() failed: " + AvStrError(error));
   }
 
-  // get  SPS, PPS
-  //const H264Context *h = (const H264Context *)codecCtxPtr_->priv_data;
+
 
 }
 
@@ -187,6 +200,14 @@ void Stream::PushFrame(BOOL(*fp)(const UINT8&, UINT8 *, UINT32 ))
     {
       UINT8 * buffer = (UINT8*)malloc(size + 1);
       singleq.pop(buffer);
+
+      // Get  SPS, PPS
+#if 0
+      const H264Context *h = (const H264Context *)codecCtxPtr_->priv_data;
+      const PPS* pps = h->ps.pps;
+      const SPS* sps = h->ps.sps;
+#endif
+
       fp(0, buffer, size);
       //boost::chrono::milliseconds(100);
       free(buffer);

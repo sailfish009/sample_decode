@@ -42,6 +42,7 @@ extern "C"
 
 #include <libavcodec/avcodec.h>
 #include <libavutil/frame.h>
+#include <stdatomic.h>
 
   typedef struct VideoDSPContext {
     /**
@@ -81,12 +82,13 @@ extern "C"
     void(*prefetch)(uint8_t *buf, ptrdiff_t stride, int h);
   } VideoDSPContext;
 
+
+
   typedef void(*h264_weight_func)(uint8_t *block, ptrdiff_t stride, int height,
     int log2_denom, int weight, int offset);
   typedef void(*h264_biweight_func)(uint8_t *dst, uint8_t *src,
     ptrdiff_t stride, int height, int log2_denom,
     int weightd, int weights, int offset);
-
 
   /**
   * Context for storing H.264 DSP functions
@@ -170,6 +172,7 @@ extern "C"
   } H264DSPContext;
 
 
+
   typedef void(*h264_chroma_mc_func)(uint8_t *dst /*align 8*/, uint8_t *src /*align 1*/, ptrdiff_t srcStride, int h, int x, int y);
 
   typedef struct H264ChromaContext {
@@ -178,15 +181,16 @@ extern "C"
   } H264ChromaContext;
 
 
+
   typedef void(*qpel_mc_func)(uint8_t *dst /* align width (8 or 16) */,
     const uint8_t *src /* align 1 */,
     ptrdiff_t stride);
-
 
   typedef struct H264QpelContext {
     qpel_mc_func put_h264_qpel_pixels_tab[4][16];
     qpel_mc_func avg_h264_qpel_pixels_tab[4][16];
   } H264QpelContext;
+
 
 
   typedef struct ThreadFrame {
@@ -238,12 +242,14 @@ extern "C"
   } H264Picture;
 
 
+
   typedef struct GetBitContext {
     const uint8_t *buffer, *buffer_end;
     int index;
     int size_in_bits;
     int size_in_bits_plus8;
   } GetBitContext;
+
 
 
   /* Motion estimation:
@@ -286,6 +292,7 @@ extern "C"
   } MECmpContext;
 
 
+
   typedef struct ERPicture {
     AVFrame *f;
     ThreadFrame *tf;
@@ -299,6 +306,7 @@ extern "C"
   } ERPicture;
 
 
+
   typedef struct ERContext {
     AVCodecContext *avctx;
     MECmpContext mecc;
@@ -310,7 +318,7 @@ extern "C"
     ptrdiff_t mb_stride;
     ptrdiff_t b8_stride;
 
-    volatile int error_count;
+    atomic_int error_count;
     int error_occurred;
     uint8_t *error_status_table;
     uint8_t *er_temp_buffer;
@@ -339,6 +347,7 @@ extern "C"
   } ERContext;
 
 
+
   typedef struct H264PredWeightTable {
     int use_weight;
     int use_weight_chroma;
@@ -353,6 +362,7 @@ extern "C"
   } H264PredWeightTable;
 
 
+
   typedef struct H264Ref {
     uint8_t *data[3];
     int linesize[3];
@@ -365,12 +375,14 @@ extern "C"
   } H264Ref;
 
 
+
   typedef struct PutBitContext {
     uint32_t bit_buf;
     int bit_left;
     uint8_t *buf, *buf_ptr, *buf_end;
     int size_in_bits;
   } PutBitContext;
+
 
 
   typedef struct CABACContext {
@@ -382,6 +394,7 @@ extern "C"
     const uint8_t *bytestream_end;
     PutBitContext pb;
   }CABACContext;
+
 
 
   /**
@@ -406,6 +419,7 @@ extern "C"
     int long_arg;       ///< index, pic_num, or num long refs depending on opcode
   } MMCO;
 
+ 
 
   typedef struct H264SliceContext {
     struct H264Context *h264;
@@ -564,10 +578,10 @@ extern "C"
     int max_pic_num;
   } H264SliceContext;
 
+ 
 
   typedef struct H2645NAL {
     uint8_t *rbsp_buffer;
-    int rbsp_buffer_size;
 
     int size;
     const uint8_t *data;
@@ -603,12 +617,23 @@ extern "C"
   } H2645NAL;
 
 
+
+  typedef struct H2645RBSP {
+    uint8_t *rbsp_buffer;
+    int rbsp_buffer_alloc_size;
+    int rbsp_buffer_size;
+  } H2645RBSP;
+
+
+
   /* an input packet split into unescaped NAL units */
   typedef struct H2645Packet {
     H2645NAL *nals;
+    H2645RBSP rbsp;
     int nb_nals;
     int nals_allocated;
   } H2645Packet;
+
 
 
   /**
@@ -635,6 +660,7 @@ extern "C"
       const int *block_offset,
       int16_t *block /*align 16*/, ptrdiff_t stride);
   } H264PredContext;
+
 
 
   /**
@@ -763,6 +789,7 @@ extern "C"
   } H264POCContext;
 
 
+
   /**
   * pic_struct in picture timing SEI message
   */
@@ -777,7 +804,6 @@ extern "C"
     H264_SEI_PIC_STRUCT_FRAME_DOUBLING = 7, ///<  7: %frame doubling
     H264_SEI_PIC_STRUCT_FRAME_TRIPLING = 8  ///<  8: %frame tripling
   } H264_SEI_PicStructType;
-
 
   typedef struct H264SEIPictureTiming {
     int present;
@@ -826,10 +852,13 @@ extern "C"
     int recovery_frame_cnt;
   } H264SEIRecoveryPoint;
 
+
+
   typedef struct H264SEIBufferingPeriod {
     int present;   ///< Buffering period SEI flag
     int initial_cpb_removal_delay[32];  ///< Initial timestamps for CPBs
   } H264SEIBufferingPeriod;
+
 
 
   /**
@@ -846,23 +875,23 @@ extern "C"
   } H264_SEI_FpaType;
 
 
+
   typedef struct H264SEIFramePacking {
     int present;
-    int frame_packing_arrangement_id;
-    int frame_packing_arrangement_cancel_flag;  ///< is previous arrangement canceled, -1 if never received
-    H264_SEI_FpaType frame_packing_arrangement_type;
-    int frame_packing_arrangement_repetition_period;
+    int arrangement_id;
+    int arrangement_cancel_flag;  ///< is previous arrangement canceled, -1 if never received
+    H264_SEI_FpaType arrangement_type;
+    int arrangement_repetition_period;
     int content_interpretation_type;
     int quincunx_sampling_flag;
+    int current_frame_is_frame0_flag;
   } H264SEIFramePacking;
-
 
   typedef struct H264SEIDisplayOrientation {
     int present;
     int anticlockwise_rotation;
     int hflip, vflip;
   } H264SEIDisplayOrientation;
-
 
   typedef struct H264SEIGreenMetaData {
     uint8_t green_metadata_type;
@@ -877,13 +906,10 @@ extern "C"
     uint16_t xsd_metric_value;
   } H264SEIGreenMetaData;
 
-
   typedef struct H264SEIAlternativeTransfer {
     int present;
     int preferred_transfer_characteristics;
   } H264SEIAlternativeTransfer;
-
-
 
   typedef struct H264SEIContext {
     H264SEIPictureTiming picture_timing;
@@ -897,6 +923,7 @@ extern "C"
     H264SEIGreenMetaData green_metadata;
     H264SEIAlternativeTransfer alternative_transfer;
   } H264SEIContext;
+
 
 
   /**
@@ -933,6 +960,7 @@ extern "C"
     int context_initialized;
     int flags;
     int workaround_bugs;
+    int x264_build;
     /* Set when slice threading is used and at least one slice uses deblocking
      * mode 1 (i.e. across slice boundaries). Then we disable the loop filter
      * during normal MB decoding and execute it serially at the end.

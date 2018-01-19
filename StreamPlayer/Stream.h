@@ -45,7 +45,7 @@ namespace FFmpeg
 #pragma warning( pop )
 
 	// The FFmpeg framework built using the following configuration:
-	// x64: ./configure --toolchain=msvc --arch=amd64 --target-os=win64 --enable-version3  --enable-x86asm --enable-asm --disable-static --enable-shared --disable-programs --disable-doc  
+  // x64: ./configure --toolchain=msvc --arch=amd64 --target-os=win64 --enable-version3  --enable-x86asm --enable-asm --disable-static --enable-shared --disable-programs --disable-doc  
   // x86:  ./configure --toolchain=msvc --arch=i386 --enable-version3  --enable-x86asm --enable-asm --disable-static --enable-shared --disable-programs --disable-doc 
 
 #pragma comment(lib, "avformat.lib")
@@ -120,6 +120,7 @@ namespace FFmpeg
 
       AVFormatContext *formatCtxPtr_;
       AVCodecContext  *codecCtxPtr_;
+      AVCodecParameters *codecparPtr_;
 
       int32_t videoStreamIndex_;
       SwsContext *imageConvertCtxPtr_;
