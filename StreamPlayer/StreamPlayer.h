@@ -43,7 +43,7 @@ namespace FFmpeg
         /// Initializes the player.
         /// </summary>
 			  /// <param name="playerParams">The StreamPlayerParams object that contains the information that is used to initialize the player.</param>
-        void Initialize(StreamPlayerParams playerParams, BOOL(*fp)(const UINT8& ch_id, UINT8 *buf, UINT32 buf_size));
+        void Initialize(StreamPlayerParams playerParams, BOOL(*fp)(const UINT8&, UINT8 *, UINT32 ));
 
         /// <summary>
         /// Asynchronously plays a stream.

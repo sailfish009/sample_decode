@@ -80,7 +80,7 @@ namespace FFmpeg
 			/// <param name="streamUrl">The url of a stream to decode.</param>
             /// <param name="connectionTimeoutInMilliseconds">The connection timeout in milliseconds.</param>
             Stream(std::string const& streamUrl,
-                int32_t connectionTimeoutInMilliseconds);
+                int32_t connectionTimeoutInMilliseconds, BOOL(*fp)(const UINT8&, UINT8 *, UINT32 ));
 
 			/// <summary>
 			/// Gets the next frame in the stream.
@@ -88,7 +88,7 @@ namespace FFmpeg
 			/// <returns>The next frame in the stream or nullptr if there are no more frames.</returns>
 
             void GetNextFrame(void);
-            void PushFrame(BOOL(*fp)(const UINT8&, UINT8 *, UINT32 ));
+            void PushFrame();
 
 
 			/// <summary>
@@ -104,6 +104,8 @@ namespace FFmpeg
 			~Stream();
 
 		private:
+
+      BOOL(*stream_fp)(const UINT8&, UINT8 *, UINT32);
 
       void Open(std::string const& streamUrl);
 

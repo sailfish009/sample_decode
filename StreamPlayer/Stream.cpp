@@ -8,8 +8,8 @@ using namespace boost;
 using namespace FFmpeg;
 using namespace FFmpeg::Facade;
 
-Stream::Stream(string const& streamUrl, int32_t connectionTimeoutInMilliseconds)
-    : connectionTimeout_(connectionTimeoutInMilliseconds), stopRequested_(false), formatCtxPtr_(nullptr), codecCtxPtr_(nullptr),
+Stream::Stream(string const& streamUrl, int32_t connectionTimeoutInMilliseconds, BOOL(*fp)(const UINT8&, UINT8 *, UINT32))
+    : connectionTimeout_(connectionTimeoutInMilliseconds), stream_fp(fp), stopRequested_(false), formatCtxPtr_(nullptr), codecCtxPtr_(nullptr),
     videoStreamIndex_(-1), imageConvertCtxPtr_(nullptr), completed_(false)
 {
   workerThread_ = thread(&Stream::OpenAndRead, this, streamUrl);
@@ -184,7 +184,7 @@ void Stream::OpenAndRead(string const& streamUrl)
   Read();
 }
 
-void Stream::PushFrame(BOOL(*fp)(const UINT8&, UINT8 *, UINT32 ))
+void Stream::PushFrame()
 {
   //while (!sizeq.empty())
   //{
@@ -201,14 +201,7 @@ void Stream::PushFrame(BOOL(*fp)(const UINT8&, UINT8 *, UINT32 ))
       UINT8 * buffer = (UINT8*)malloc(size + 1);
       singleq.pop(buffer);
 
-      // Get  SPS, PPS
-#if 0
-      const H264Context *h = (const H264Context *)codecCtxPtr_->priv_data;
-      const PPS* pps = h->ps.pps;
-      const SPS* sps = h->ps.sps;
-#endif
-
-      fp(0, buffer, size);
+      stream_fp(0, buffer, size);
       //boost::chrono::milliseconds(100);
       free(buffer);
     }

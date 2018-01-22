@@ -16,7 +16,7 @@ WNDPROC StreamPlayer::originalWndProc_ = nullptr;
 StreamPlayer::StreamPlayer()
 	: stopRequested_(false) {}
 
-void StreamPlayer::Initialize(StreamPlayerParams params, BOOL(*fpp)(const UINT8& ch_id, UINT8 *buf, UINT32 buf_size))
+void StreamPlayer::Initialize(StreamPlayerParams params, BOOL(*fpp)(const UINT8&, UINT8 *, UINT32 ))
 {
   assert(params.window != nullptr);
   playerParams_ = params;
@@ -57,7 +57,7 @@ void StreamPlayer::Consume()
     for (;;)
     {
 
-      streamPtr_->PushFrame(fp);
+      streamPtr_->PushFrame();
 
       if (stopRequested_)
       {
@@ -114,7 +114,7 @@ void StreamPlayer::Produce(string const& streamUrl,
   {
     {
       unique_lock<mutex> lock(streamMutex_);
-      streamPtr_ = make_unique<Stream>(streamUrl, connectionTimeoutInMilliseconds);
+      streamPtr_ = make_unique<Stream>(streamUrl, connectionTimeoutInMilliseconds, fp);
     }
 
     stopRequested_ = false;
