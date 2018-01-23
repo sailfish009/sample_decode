@@ -22,26 +22,34 @@
 #pragma comment(lib, "imm32.lib")
 #pragma comment(lib, "setupapi.lib")
 
+// FFmpeg
+////////////////////////////////////////////////////////////////////////////////////////
+extern "C"
+{
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavformat/avio.h>
+#include <libswscale/swscale.h>
+}
+#pragma comment(lib, "avformat.lib")
+#pragma comment(lib, "avcodec.lib")
+#pragma comment(lib, "swscale.lib")
+////////////////////////////////////////////////////////////////////////////////////////
+
 #include <thread>
 #include <atomic>
 #include <fstream>
 #include <comdef.h>          //_com_error
 
-struct StreamPlayerParams
-{
-  StreamPlayerParams()
-    : window(nullptr)
-  {}
-  HWND window;
-};
 
-
+// Boost ASIO
 ////////////////////////////////////////////////////////////////////////////////////////
-
-using _Initialize         = void (WINAPI *)(StreamPlayerParams params, BOOL(*fp)(const UINT8& ch_id, UINT8 *buf, UINT32 buf_size));
-using  _StartPlay       = void (WINAPI *)(std::string const& streamUrl, uint32_t connectionTimeoutInMilliseconds);
-using  _Stop               =  void (WINAPI *)();
-using  _Uninitialize  =  void (WINAPI *)();
+#define BOOST_ASIO_HAS_MOVE 1
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
+#include <boost/thread/thread.hpp>
+#include <boost/atomic.hpp>
+////////////////////////////////////////////////////////////////////////////////////////
 
 class CMainDlg : public CDialogImpl<CMainDlg>, public CUpdateUI<CMainDlg>,
 		public CMessageFilter, public CIdleHandler
@@ -55,14 +63,9 @@ public:
   BOOL run_video();
   BOOL stop_video();
 
-private:
-  HMODULE hlib;
-  _Initialize Initialize;
-  _StartPlay StartPlay;
-  _Stop Stop;
-  _Uninitialize Uninitialize;
-
-public:
+  std::thread stream_worker;
+  void stream_work(UINT8 onoff);
+  void stream();
 
 	virtual BOOL PreTranslateMessage(MSG* pMsg)
 	{
@@ -97,51 +100,8 @@ public:
 		// center the dialog on the screen
 		CenterWindow();
 
-    Initialize = nullptr;
-    StartPlay = nullptr;
-    Stop = nullptr;
-    Uninitialize = nullptr;
-
     toggle_video = FALSE;
     view_hwnd = GetDlgItem(IDC_VIDEO);
-
-    TCHAR TempPath[256] = { 0 };
-    TCHAR _dllFile[256] = { 0 };
-    GetTempPath(256, TempPath);
-    GetTempFileName(TempPath, TEXT("TMP"), GetTickCount(), _dllFile);
-    HRSRC myres = ::FindResource(NULL, MAKEINTRESOURCE(IDR_RCDATA1), RT_RCDATA);
-    unsigned int myresSize = ::SizeofResource(NULL, myres);
-    HGLOBAL myresData = ::LoadResource(NULL, myres);
-    byte* mybinData = reinterpret_cast<byte*>(::LockResource(myresData));
-    std::ofstream o_stream(_dllFile, std::ios::out | std::ios::binary);
-    o_stream.write((char *)mybinData, myresSize);
-    o_stream.close();
-
-    hlib = LoadLibrary(_dllFile);
-    if (hlib == NULL)
-    {
-      MessageBox(_com_error(GetLastError()).ErrorMessage());
-      return FALSE;
-    }
-
-    Initialize = (_Initialize)GetProcAddress(hlib, "Initialize");
-    StartPlay = (_StartPlay)GetProcAddress(hlib, "StartPlay");
-    Stop = (_Stop)GetProcAddress(hlib, "Stop");
-    Uninitialize = (_Uninitialize)GetProcAddress(hlib, "Uninitialize");
-
-    if (
-      (Initialize == nullptr) ||
-      (StartPlay == nullptr) ||
-      (Stop == nullptr) ||
-      (Uninitialize == nullptr)
-      )
-    {
-      FreeLibrary(hlib);
-      MessageBox(_com_error(GetLastError()).ErrorMessage());
-      return FALSE;
-    }
-
-
 
 		// set icons
 		HICON hIcon = AtlLoadIconImage(IDR_MAINFRAME, LR_DEFAULTCOLOR, ::GetSystemMetrics(SM_CXICON), ::GetSystemMetrics(SM_CYICON));

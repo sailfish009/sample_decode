@@ -5,7 +5,6 @@
 #define IDD_ABOUTBOX                    100
 #define IDR_MAINFRAME                   128
 #define IDD_MAINDLG                     129
-#define IDR_RCDATA1                     202
 #define IDC_VIDEO                       1000
 #define IDC_BUTTON1                     1001
 
