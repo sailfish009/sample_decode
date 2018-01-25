@@ -34,16 +34,7 @@ HWND          CMainDlg::view_hwnd = nullptr;
 
 AVCodecContext       *avc_ctx = nullptr;
 AVFormatContext     *avf_ctx = nullptr;
-AVPacket packet;
 int video_stream_index = -1;
-
-// video asio
-boost::asio::io_service video_io_service;
-boost::asio::io_service::work video_work(video_io_service);
-boost::thread_group video_threads;
-boost::asio::io_service::strand video_strand(video_io_service);
-
-void video_stream(const UINT8& channel, boost::asio::mutable_buffers_1 v);
 
 static BOOL  dummy_hw_decoder_function(const UINT8& channel, UINT8 *buffer, UINT32 buffer_size)
 {
@@ -74,18 +65,20 @@ BOOL CMainDlg::run_video()
   /////////////////////////
   /////////////////////////
 
-  video_threads.create_thread(boost::bind(&boost::asio::io_service::run, &video_io_service));
-
   // HW decoder run 
   /////////////////////////
   /////////////////////////
+
   av_register_all();
   avformat_network_init();
   avf_ctx = avformat_alloc_context();
 
+  AVDictionary* option = nullptr;
+  av_dict_set(&option, "rtsp_transport", "tcp", 0);
+
   std::string str = "rtsp://admin:12345@192.168.100.100/Streaming/Channels/101";
 
-  if (avformat_open_input(&avf_ctx, str.c_str(), nullptr, nullptr) != 0)
+  if (avformat_open_input(&avf_ctx, str.c_str(), nullptr, &option) != 0)
   {
     printf("avformat_open_input error\n");
     return FALSE;
@@ -128,7 +121,6 @@ BOOL CMainDlg::run_video()
     return FALSE;
   }
 
-  av_init_packet(&packet);
 
   stream_work(TRUE);
 
@@ -139,9 +131,6 @@ BOOL CMainDlg::run_video()
 BOOL CMainDlg::stop_video()
 {
   stream_work(FALSE);
-
-  video_io_service.stop();
-  video_threads.join_all();
 
   // HW decoder uninit
   /////////////////////////
@@ -165,18 +154,12 @@ void CMainDlg::stream()
   for (;;)
   {
     switch (video_off) { case 0:break; default: return; }
+    AVPacket packet;
+    av_init_packet(&packet);
     if ( (av_read_frame(avf_ctx, &packet) >= 0) && (packet.stream_index == video_stream_index) )
     {
-      video_strand.post(boost::bind(video_stream, 0, boost::asio::buffer(packet.buf->data ,  packet.buf->size )));
+      dummy_hw_decoder_function(0, packet.buf->data, packet.buf->size);
+      av_packet_unref(&packet);
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
-}
-
-
-void video_stream(const UINT8& channel, boost::asio::mutable_buffers_1 v)
-{
-  std::size_t buffer_size = boost::asio::buffer_size(v);
-  unsigned char* buffer = boost::asio::buffer_cast<unsigned char*>(v);
-  dummy_hw_decoder_function(0, buffer, buffer_size);
 }

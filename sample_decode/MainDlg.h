@@ -59,7 +59,7 @@ extern "C"
 }
 #pragma comment(lib, "avformat.lib")
 #pragma comment(lib, "avcodec.lib")
-#pragma comment(lib, "swscale.lib")
+#pragma comment(lib, "avutil.lib")
 ////////////////////////////////////////////////////////////////////////////////////////
 
 #include <thread>
@@ -67,15 +67,6 @@ extern "C"
 #include <fstream>
 #include <comdef.h>          //_com_error
 
-
-// Boost ASIO
-////////////////////////////////////////////////////////////////////////////////////////
-#define BOOST_ASIO_HAS_MOVE 1
-#include <boost/asio.hpp>
-#include <boost/bind.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/atomic.hpp>
-////////////////////////////////////////////////////////////////////////////////////////
 
 class CMainDlg : public CDialogImpl<CMainDlg>, public CUpdateUI<CMainDlg>,
 		public CMessageFilter, public CIdleHandler
